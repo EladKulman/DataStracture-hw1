@@ -37,6 +37,7 @@ class AVLNode(object):
 """
 A class implementing an AVL tree.
 """
+EXT = AVLNode(None, None)
 
 class AVLTree(object):
 
@@ -44,7 +45,9 @@ class AVLTree(object):
 	Constructor, you are allowed to add more fields.
 	"""
 	def __init__(self):
-		self.root = None
+		self._root = EXT
+		self._size = 0
+		self._max = EXT
 
 
 	"""searches for a node in the dictionary corresponding to the key (starting at the root)
@@ -164,7 +167,7 @@ class AVLTree(object):
 	@returns: the number of items in dictionary 
 	"""
 	def size(self):
-		return -1	
+		return self._size
 
 
 	"""returns the root of the tree representing the dictionary
