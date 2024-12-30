@@ -14,19 +14,18 @@ class AVLNode(object):
         self.right = None    # right child (AVLNode or None)
         self.parent = None   # parent (AVLNode or None)
         self.height = 0 if key is not None else -1
-
     def is_real_node(self):
         """
         Returns True if this node is a real node (holds a key).
-        Returns False if this node is a "virtual" node (None or key=None).
+        Returns False if this node is a "virtual" node (EXT or key=EXT).
         """
-        return self.key is not None
+        return self.key != 'EXT'
 
     def get_balance_factor(self):
         """
         Returns the balance factor of this node:
         (height of left child) - (height of right child).
-        Virtual/None children have height = -1.
+        Virtual/EXT children have height = -1.
         """
         if not self.is_real_node():
             return 0
@@ -46,7 +45,7 @@ class AVLNode(object):
             right_h = self.right.height if self.right else -1
             self.height = 1 + max(left_h, right_h)
 
-EXT = AVLNode(0, "EXT")
+EXT = AVLNode("EXT", "EXT")
 
 class AVLTree(object):
     """
@@ -55,9 +54,9 @@ class AVLTree(object):
 
     def __init__(self):
         """
-        Constructor: Initialize an empty tree (root = None).
+        Constructor: Initialize an empty tree (root = EXT).
         """
-        self.root = None
+        self.root = EXT
 
     def _create_node(self, key, value):
         node = AVLNode(key, value)
@@ -73,16 +72,16 @@ class AVLTree(object):
         """
         Searches for 'key' in the AVL tree, starting at the root.
         Returns (x, e), where:
-          x = the node whose key == key, or None if not found
+          x = the node whose key == key, or EXT if not found
           e = number of edges on the path + 1
         """
-        if self.root is None:
-            return (None, 1)  # empty tree => path length = 1 by definition
+        if self.root is EXT:
+            return (EXT, 1)  # empty tree => path length = 1 by definition
 
         # Standard BST search from root
         current = self.root
         edges = 1  # as per instructions: "edges on path + 1"
-        while current is not None:
+        while current is not EXT:
             if key == current.key:
                 return (current, edges)
             elif key < current.key:
@@ -92,7 +91,7 @@ class AVLTree(object):
             edges += 1
 
         # not found
-        return (None, edges)
+        return (EXT, edges)
 
     def finger_search(self, key):
         """
@@ -100,18 +99,18 @@ class AVLTree(object):
         instead of the root. Returns (x, e) as in search().
         """
         max_node = self.max_node()
-        if max_node is None:
-            return (None, 1)  # empty tree => path length = 1
+        if max_node is EXT:
+            return (EXT, 1)  # empty tree => path length = 1
 
         current = max_node
         edges = 1
         # We move up or down the tree to find the key
-        while current is not None:
+        while current is not EXT:
             if key == current.key:
                 return (current, edges)
             elif key < current.key:
                 # move left if possible, otherwise move to parent
-                if current.left is not None:
+                if current.left is not EXT:
                     current = current.left
                 else:
                     # no left child => must go up
@@ -119,13 +118,13 @@ class AVLTree(object):
             else:
                 # key > current.key
                 # move right if possible, otherwise move to parent
-                if current.right is not None:
+                if current.right is not EXT:
                     current = current.right
                 else:
                     current = current.parent
             edges += 1
 
-        return (None, edges)
+        return (EXT, edges)
 
     ##########################
     #   INSERTION METHODS    #
@@ -140,7 +139,7 @@ class AVLTree(object):
           h = number of PROMOTE operations
         """
         # Step 1: Normal BST insertion from the root
-        if self.root is None:
+        if self.root is EXT:
             new_node = self._create_node(key, val)
             self.root = new_node
             return (new_node, 1, 0)
@@ -150,7 +149,7 @@ class AVLTree(object):
         while True:
             e += 1
             if key < current.key:
-                if current.left is None:
+                if current.left is EXT:
                     new_node = self._create_node(key, val)
                     current.left = new_node
                     new_node.parent = current
@@ -159,7 +158,7 @@ class AVLTree(object):
                     current = current.left
             else:
                 # key > current.key (by precondition it doesn't exist yet)
-                if current.right is None:
+                if current.right is EXT:
                     new_node = self._create_node(key, val)
                     current.right = new_node
                     new_node.parent = current
@@ -177,7 +176,7 @@ class AVLTree(object):
         Returns (x, e, h) same as insert.
         """
         max_node = self.max_node()
-        if max_node is None:
+        if max_node is EXT:
             # tree empty
             new_node = self._create_node(key, val)
             self.root = new_node
@@ -188,7 +187,7 @@ class AVLTree(object):
         while True:
             e += 1
             if key < current.key:
-                if current.left is None:
+                if current.left is EXT:
                     new_node = self._create_node(key, val)
                     current.left = new_node
                     new_node.parent = current
@@ -197,7 +196,7 @@ class AVLTree(object):
                     current = current.left
             else:
                 # key > current.key
-                if current.right is None:
+                if current.right is EXT:
                     new_node = self._create_node(key, val)
                     current.right = new_node
                     new_node.parent = current
@@ -219,11 +218,11 @@ class AVLTree(object):
         node is guaranteed to be in the tree (real pointer).
         No return value.
         """
-        if node is None or not node.is_real_node():
+        if node is EXT or not node.is_real_node():
             return  # nothing to delete
 
         # Case 1: node has 0 or 1 child
-        if node.left is None or node.right is None:
+        if node.left is EXT or node.right is EXT:
             self._delete_single_child(node)
         else:
             # node has 2 children: replace with successor
@@ -239,21 +238,21 @@ class AVLTree(object):
         Handles deletion when node has at most 1 child.
         """
         parent = node.parent
-        child = node.left if node.left is not None else node.right
+        child = node.left if node.left is not EXT else node.right
 
-        # If child is None, it means no children
-        # 'child' could be real or None
-        if parent is None:
+        # If child is EXT, it means no children
+        # 'child' could be real or EXT
+        if parent is EXT:
             # node is root
             self.root = child
-            if child is not None:
-                child.parent = None
+            if child is not EXT:
+                child.parent = EXT
         else:
             if parent.left == node:
                 parent.left = child
             else:
                 parent.right = child
-            if child is not None:
+            if child is not EXT:
                 child.parent = parent
 
         # Rebalance up from parent
@@ -269,13 +268,13 @@ class AVLTree(object):
         Precondition: All keys in self < key < all keys in tree2, or the opposite.
         """
         # If one tree is empty, just insert key into the other, attach them.
-        if self.root is None:
+        if self.root is EXT:
             # Insert key into tree2
             new_node, _, _ = tree2.insert(key, val)
             self.root = tree2.root
             return
 
-        if tree2.root is None:
+        if tree2.root is EXT:
             # Insert key into self
             self.insert(key, val)
             return
@@ -294,16 +293,16 @@ class AVLTree(object):
             # A typical approach: go to the largest node in self or climb down
             # until we find a spot where the height difference is <= 1
             curr = self.root
-            while curr is not None:
+            while curr is not EXT:
                 if curr.height == h2:  # potential spot
                     break
-                if curr.right is not None and curr.right.height >= h2:
+                if curr.right is not EXT and curr.right.height >= h2:
                     curr = curr.right
                 else:
                     break
 
             # 'curr' is where we want to attach
-            # new_node's left is curr.right (could be None)
+            # new_node's left is curr.right (could be EXT)
             new_node.left = curr.right
             if new_node.left:
                 new_node.left.parent = new_node
@@ -322,10 +321,10 @@ class AVLTree(object):
             # tree2 is taller or same
             # symmetrical logic: attach self to tree2
             curr = tree2.root
-            while curr is not None:
+            while curr is not EXT:
                 if curr.height == h1:
                     break
-                if curr.left is not None and curr.left.height >= h1:
+                if curr.left is not EXT and curr.left.height >= h1:
                     curr = curr.left
                 else:
                     break
@@ -389,7 +388,7 @@ class AVLTree(object):
         return result
 
     def _inorder(self, node, result):
-        if node is None:
+        if node is EXT:
             return
         self._inorder(node.left, result)
         result.append((node.key, node.value))
@@ -397,12 +396,12 @@ class AVLTree(object):
 
     def max_node(self):
         """
-        Returns the node with the maximal key, or None if empty.
+        Returns the node with the maximal key, or EXT if empty.
         """
-        if self.root is None:
-            return None
+        if self.root is EXT:
+            return EXT
         current = self.root
-        while current.right is not None:
+        while current.right is not EXT:
             current = current.right
         return current
 
@@ -413,7 +412,7 @@ class AVLTree(object):
         return self._size_subtree(self.root)
 
     def _size_subtree(self, node):
-        if node is None:
+        if node is EXT:
             return 0
         return 1 + self._size_subtree(node.left) + self._size_subtree(node.right)
 
@@ -434,7 +433,7 @@ class AVLTree(object):
         """
         promotes = 0
         current = start_node
-        while current is not None:
+        while current is not EXT and current is not None:
             current.update_height()
             bf = current.get_balance_factor()
 
@@ -468,12 +467,12 @@ class AVLTree(object):
         Left rotation around 'node'.
         """
         right_child = node.right
-        if right_child is None:
+        if right_child is EXT:
             return
 
         # Turn right_child's left subtree into node's right subtree
         node.right = right_child.left
-        if node.right is not None:
+        if node.right is not EXT:
             node.right.parent = node
 
         right_child.left = node
@@ -481,9 +480,9 @@ class AVLTree(object):
         node.parent = right_child
 
         # Update parent pointer
-        if parent is None:
+        if parent is EXT or parent is None:
             self.root = right_child
-            right_child.parent = None
+            right_child.parent = EXT
         else:
             if parent.left == node:
                 parent.left = right_child
@@ -500,20 +499,20 @@ class AVLTree(object):
         Right rotation around 'node'.
         """
         left_child = node.left
-        if left_child is None:
+        if left_child is EXT:
             return
 
         node.left = left_child.right
-        if node.left is not None:
+        if node.left is not EXT:
             node.left.parent = node
 
         left_child.right = node
         parent = node.parent
         node.parent = left_child
 
-        if parent is None:
+        if parent is EXT:
             self.root = left_child
-            left_child.parent = None
+            left_child.parent = EXT
         else:
             if parent.right == node:
                 parent.right = left_child
@@ -530,6 +529,6 @@ class AVLTree(object):
         Returns the minimal node in the subtree rooted at 'node'.
         """
         current = node
-        while current.left is not None:
+        while current.left is not EXT:
             current = current.left
         return current
