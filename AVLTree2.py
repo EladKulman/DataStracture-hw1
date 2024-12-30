@@ -57,6 +57,8 @@ class AVLTree(object):
         Constructor: Initialize an empty tree (root = EXT).
         """
         self.root = EXT
+        self.size = 0
+        self.max_node = EXT
 
     def _create_node(self, key, value):
         node = AVLNode(key, value)
@@ -98,7 +100,7 @@ class AVLTree(object):
         Searches for 'key' in the AVL tree, but starts at the maximum node
         instead of the root. Returns (x, e) as in search().
         """
-        max_node = self.max_node()
+        max_node = self.max_node
         if max_node is EXT:
             return (EXT, 1)  # empty tree => path length = 1
 
@@ -142,6 +144,8 @@ class AVLTree(object):
         if self.root is EXT:
             new_node = self._create_node(key, val)
             self.root = new_node
+            self.size += 1
+            self.max_node = new_node
             return (new_node, 1, 0)
 
         current = self.root
@@ -168,6 +172,9 @@ class AVLTree(object):
 
         # Step 2: Rebalance up the tree
         h = self._rebalance_upwards(new_node)
+        self.size += 1
+        if self.max_node is EXT or key > self.max_node.key:
+            self.max_node = new_node
         return (new_node, e, h)
 
     def finger_insert(self, key, val):
@@ -175,7 +182,7 @@ class AVLTree(object):
         Inserts (key, val) into the AVL tree, starting from the maximum node (finger).
         Returns (x, e, h) same as insert.
         """
-        max_node = self.max_node()
+        max_node = self.max_node
         if max_node is EXT:
             # tree empty
             new_node = self._create_node(key, val)
@@ -232,6 +239,8 @@ class AVLTree(object):
             node.value, successor.value = successor.value, node.value
             # Now delete the successor (which has at most 1 child)
             self._delete_single_child(successor)
+
+        self.size -= 1
 
     def _delete_single_child(self, node):
         """
@@ -394,27 +403,6 @@ class AVLTree(object):
         result.append((node.key, node.value))
         self._inorder(node.right, result)
 
-    def max_node(self):
-        """
-        Returns the node with the maximal key, or EXT if empty.
-        """
-        if self.root is EXT:
-            return EXT
-        current = self.root
-        while current.right is not EXT:
-            current = current.right
-        return current
-
-    def size(self):
-        """
-        Returns the number of (real) nodes in the AVL tree.
-        """
-        return self._size_subtree(self.root)
-
-    def _size_subtree(self, node):
-        if node is EXT:
-            return 0
-        return 1 + self._size_subtree(node.left) + self._size_subtree(node.right)
 
     def get_root(self):
         """
@@ -510,7 +498,7 @@ class AVLTree(object):
         parent = node.parent
         node.parent = left_child
 
-        if parent is EXT:
+        if parent is EXT or parent is None:
             self.root = left_child
             left_child.parent = EXT
         else:

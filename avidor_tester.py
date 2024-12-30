@@ -1,11 +1,13 @@
-from AVLTree import AVLTree
+from AVLTree2 import AVLTree, EXT
 import random
 
-TREE_SIZE = 20
+TREE_SIZE = 30
+TEST_NUM = 15
 
-def generate_tree(size):
-    nums = [i for i in range(2**15)]
-    L = random.sample(nums, size)
+nums = [i for i in range(2**15)]
+L = random.sample(nums, TREE_SIZE)
+
+def generate_tree():
     T = AVLTree()
     for j in L:
         T.insert(j, None)
@@ -60,7 +62,7 @@ def display_aux(T):
     return lines, n + m + u, max(p, q) + 2, n + u // 2
 
 def display(T):
-    lines, *_ = display_aux(T._root)
+    lines, *_ = display_aux(T.root)
     for line in lines:
         print(line)
 
@@ -74,8 +76,36 @@ def check_height(node):
                 return check_height(node.left) and check_height(node.right)
             return False
 
+
+def check_bst(self):
+        def _check_bst(node):
+            if node.key == None:
+                return True
+            if node.height == 0:
+                return True
+            if node.left.key != None:
+                if node.left is not EXT:
+                    if node.key < node.left.key:
+                        return False
+            if node.right is not EXT:
+                if node.right.key != None:
+                    if node.key > node.right.key:
+                        return False
+            return (_check_bst(node.left) and _check_bst(node.right))
+        return _check_bst(self.root)
+
+
+def test_suite():
+     # Test 1 - test tree insert 
+    for _ in range(TEST_NUM):
+        T = generate_tree()
+        assert check_height(T.root)
+        assert T.size == TREE_SIZE
+        assert T.max_node.key == max(L)
+        assert T.max_node.right == EXT
+        assert check_bst(T)
+
+
 if __name__ == "__main__":
-    T = generate_tree(TREE_SIZE)
-    display(T)
-    print(check_height(T._root))
+    test_suite()
     

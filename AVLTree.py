@@ -31,7 +31,7 @@ class AVLNode(object):
 	@returns: False if self is a virtual node, True otherwise.
 	"""
 	def is_real_node(self):
-		return self.key != "EXT"
+		return self.value != "EXT"
 
 
 """
@@ -59,7 +59,29 @@ class AVLTree(object):
 	and e is the number of edges on the path between the starting node and ending node+1.
 	"""
 	def search(self, key):
-		return None, -1
+		"""
+		Searches for 'key' in the AVL tree, starting at the root.
+		Returns (x, e), where:
+			x = the node whose key == key, or None if not found
+			e = number of edges on the path + 1
+		"""
+		if self.root is None:
+			return (None, 1)  # empty tree => path length = 1 by definition
+
+		# Standard BST search from root
+		current = self.root
+		edges = 1  # as per instructions: "edges on path + 1"
+		while current is not None:
+			if key == current.key:
+				return (current, edges)
+			elif key < current.key:
+				current = current.left
+			else:
+				current = current.right
+			edges += 1
+
+		# not found
+		return (None, edges)
 
 
 	"""searches for a node in the dictionary corresponding to the key, starting at the max
@@ -71,7 +93,37 @@ class AVLTree(object):
 	and e is the number of edges on the path between the starting node and ending node+1.
 	"""
 	def finger_search(self, key):
-		return None, -1
+		"""
+		Searches for 'key' in the AVL tree, but starts at the maximum node
+		instead of the root. Returns (x, e) as in search().
+		"""
+		max_node = self._max
+		if max_node is None:
+			return (None, 1)  # empty tree => path length = 1
+
+		current = max_node
+		edges = 1
+		# We move up or down the tree to find the key
+		while current is not None:
+			if key == current.key:
+				return (current, edges)
+			elif key < current.key:
+				# move left if possible, otherwise move to parent
+				if current.left is not None:
+					current = current.left
+				else:
+					# no left child => must go up
+					current = current.parent
+			else:
+				# key > current.key
+				# move right if possible, otherwise move to parent
+				if current.right is not None:
+					current = current.right
+				else:
+					current = current.parent
+			edges += 1
+
+		return (None, edges)
 
 	def successor(self, node):
 		if node is None:
@@ -192,11 +244,11 @@ class AVLTree(object):
 
 	def insert(self, key, value):
 		rotations = 0
-		e = 0  # Count the number of edges traversed
+		e = 1  # Count the number of edges traversed
 		parent = None
 		current = self._root
 
-		if self._root is None or not self._root.is_real_node():
+		if not self._root.is_real_node():
 			self._root = self._create_node(key, value, None)
 			self._max = self._root
 			self._size += 1
