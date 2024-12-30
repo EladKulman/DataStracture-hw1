@@ -46,7 +46,7 @@ class AVLTree(object):
     @returns: the root, None if the dictionary is empty
     """
     def get_root(self):
-        return None if self.root is EXT else self.root
+        return self.root
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
 

@@ -31,13 +31,13 @@ class AVLNode(object):
 	@returns: False if self is a virtual node, True otherwise.
 	"""
 	def is_real_node(self):
-		return self.key is not None
+		return self.key != "EXT"
 
 
 """
 A class implementing an AVL tree.
 """
-EXT = AVLNode(None, None)
+EXT = AVLNode("EXT", "EXT")
 
 class AVLTree(object):
 
@@ -121,8 +121,6 @@ class AVLTree(object):
 		y.parent = x
 		self.update_height(y)
 		self.update_height(x)
-		y.update_size()
-		x.update_size()
 
 		return rotation_count
 
@@ -145,8 +143,6 @@ class AVLTree(object):
 		x.parent = y
 		self.update_height(x)
 		self.update_height(y)
-		y.update_size()
-		x.update_size()
 
 		return rotation_count
 
@@ -169,12 +165,17 @@ class AVLTree(object):
 					rotations += 1
 				self.rotate_left(node)
 				rotations += 1
-			if node.is_real_node:
-				node.update_size()
 
 			node = node.parent
 
 		return rotations
+	
+	def _create_node(self, key, value, parent):
+		node = AVLNode(key, value)
+		node.left = EXT
+		node.right = EXT
+		node.parent = parent
+		return node
 
 	"""inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
@@ -196,7 +197,7 @@ class AVLTree(object):
 		current = self._root
 
 		if self._root is None or not self._root.is_real_node():
-			self._root = AVLNode(key, value)
+			self._root = self._create_node(key, value, None)
 			self._max = self._root
 			self._size += 1
 			return self._root, e, rotations
@@ -209,8 +210,7 @@ class AVLTree(object):
 			else:
 				current = current.right
 
-		new_node = AVLNode(key, value)
-		new_node.parent = parent
+		new_node = self._create_node(key, value, parent)
 		if key < parent.key:
 			parent.left = new_node
 		else:
@@ -262,7 +262,7 @@ class AVLTree(object):
 		current = self._max
 
 		if not self._root or not self._root.is_real_node():
-			self._root = AVLNode(key, value)
+			self._root = self._create_node(key, value, None)
 			self._max = self._root
 			self._size += 1
 			return self._root, e, rotations
@@ -275,8 +275,7 @@ class AVLTree(object):
 			else:
 				current = current.right
 
-		new_node = AVLNode(key, value)
-		new_node.parent = parent
+		new_node = self._create_node(key, value, parent=parent)
 		if key < parent.key:
 			parent.left = new_node
 		else:
@@ -328,7 +327,7 @@ class AVLTree(object):
 			if node == self._max:
 				self._max = node.parent if node.parent and node.parent.is_real_node() else None
 			if node.parent:
-				node.parent.update_size()
+				node.parent.parent.size += 1
 			self.rebalance(node.parent)
 			self._size -= 1
 			return
@@ -345,8 +344,6 @@ class AVLTree(object):
 				child.parent = node.parent
 			if node == self._max:
 				self._max = child
-			if node.parent:
-				node.parent.update_size()
 			self.rebalance(node.parent)
 			self._size -= 1
 			return
