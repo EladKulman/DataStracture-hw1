@@ -19,7 +19,7 @@ class AVLNode(object):
         Returns True if this node is a real node (holds a key).
         Returns False if this node is a "virtual" node (EXT or key=EXT).
         """
-        return self.key != 'EXT'
+        return self.key != None
 
     def get_balance_factor(self):
         """
@@ -45,7 +45,8 @@ class AVLNode(object):
             right_h = self.right.height if self.right else -1
             self.height = 1 + max(left_h, right_h)
 
-EXT = AVLNode("EXT", "EXT")
+EXT = AVLNode(None, None)
+EXT.height = -1
 
 class AVLTree(object):
     """
@@ -345,37 +346,46 @@ class AVLTree(object):
 
     def split(self, node):
         """
-        Splits self into two AVL trees around 'node'.
-        Returns (left_tree, right_tree), where:
-          left_tree has all keys < node.key
-          right_tree has all keys > node.key
+        Split around 'node':
+        - Remove 'node' from self.
+        - Return (T1, T2) with keys < node.key in T1 and > node.key in T2.
+        Uses pointer-based joins while climbing from node's parent.
         """
-        left_tree = AVLTree()
-        right_tree = AVLTree()
 
-        # 1) Delete 'node' from the tree
-        self.delete(node)
+        if not node.is_real_node():
+            return AVLTree(), AVLTree()
 
-        # 2) Everything smaller goes to left_tree, everything bigger goes to right_tree
-        #    We can do an in-order traversal and reinsert into two separate trees,
-        #    or we can climb from 'node' outward. Implementation can vary.
+        # # 1) Remove node
+        # split_key = node.key
+        # self.delete(node)
 
-        # Easiest: convert to array, split array at node.key, build two trees.
-        arr = self.avl_to_array()
-        # find the pivot index
-        pivot = 0
-        while pivot < len(arr) and arr[pivot][0] < node.key:
-            pivot += 1
+        # 2) T1, T2 start empty
+        T1 = AVLTree()
+        T1.root = node.left
+        T1.max_node = node.left
+        T2 = AVLTree()
+        T2.root = node.right
+        T2.max_node = node.right
 
-        left_part = arr[:pivot]
-        right_part = arr[pivot:]  # node.key is removed from original, so it won't appear
+        parent = node.parent
+        while parent is not None:
+            if parent.left == node:
+                # parent -> T2
+                new_tree = AVLTree()
+                new_tree.root = parent.right
+                new_tree.max_node = parent.right
+                T2.join(new_tree, parent.key, parent.value)
+            else:
+                # parent -> T2
+                new_tree = AVLTree()
+                new_tree.root = parent.left
+                new_tree.max_node = parent.left
+                T1.join(new_tree, parent.key, parent.value)
+            node = parent
+            parent = parent.parent
 
-        for (k, v) in left_part:
-            left_tree.insert(k, v)
-        for (k, v) in right_part:
-            right_tree.insert(k, v)
+        return (T1, T2)
 
-        return (left_tree, right_tree)
 
     ##########################
     #   HELPER / UTILITIES   #
@@ -458,7 +468,7 @@ class AVLTree(object):
         # Update parent pointer
         if parent is EXT or parent is None:
             self.root = right_child
-            right_child.parent = EXT
+            right_child.parent = None
         else:
             if parent.left == node:
                 parent.left = right_child
@@ -488,7 +498,7 @@ class AVLTree(object):
 
         if parent is EXT or parent is None:
             self.root = left_child
-            left_child.parent = EXT
+            left_child.parent = None
         else:
             if parent.right == node:
                 parent.right = left_child

@@ -154,21 +154,20 @@ def test_suite():
             assert check_bst(T_big)
             assert check_bst(T_big)
 
-    # # Test 3 - test tree split
-    # for i in range(TEST_NUM):
-    #     T = generate_tree()
-    #     source_size = T.size
-    #     display(T)
-    #     split_key = random.choice(L)
-    #     v = T.search(split_key)[0]
-    #     t1, t2 = T.split(v)
-    #     display(t1)
-    #     display(t2)
-    #     assert check_bst(t1)
-    #     assert check_bst(t2)c
-    #     assert check_height(t1.root)
-    #     assert check_height(t2.root)
-    #     assert t1.size + t2.size == source_size - 1
+    # Test 3 - test tree split
+    for i in range(TEST_NUM):
+        T = generate_tree()
+        display(T)
+        split_key = random.choice(L)
+        v = T.search(split_key)[0]
+        display(T)
+        t1, t2 = T.split(v)
+        display(t1)
+        display(t2)
+        assert check_bst(t1)
+        assert check_bst(t2)
+        assert check_height(t1.root)
+        assert check_height(t2.root)
 
 if __name__ == "__main__":
     test_suite()
