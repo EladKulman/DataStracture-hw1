@@ -271,84 +271,77 @@ class AVLTree(object):
     #    JOIN AND SPLIT      #
     ##########################
 
-    def join(self, tree2, key, val):
+    def join(self, t, k, v):
         """
-        Joins self with tree2 and a new item (key, val).
-        Precondition: All keys in self < key < all keys in tree2, or the opposite.
+        Joins the current tree (self) with another tree t, plus a new item (k, v).
+        Assumes:
+            - All keys in t are either all < every key in self, OR all > every key in self.
+            - Therefore, we can simply "bridge" these two trees by adding (k,v)
+            as a new root, with t on one side and self on the other.
+        After this call, 't' is no longer used; 'self' becomes the combined AVL tree.
+
+        Complexity: O(log n) due to the AVL rebalancing; the raw attach is O(1).
         """
-        # If one tree is empty, just insert key into the other, attach them.
-        if self.root is EXT:
-            # Insert key into tree2
-            new_node, _, _ = tree2.insert(key, val)
-            self.root = tree2.root
+        # 7) Update max_node if needed.
+        if self.max_node.is_real_node() and t.max_node.is_real_node():
+            if t.max_node.key > self.max_node.key:
+                self.max_node = t.max_node
+
+        # 1) If tree t is empty, we simply insert (k, v) into self and return.
+        if not t.root.is_real_node():
+            self.insert(k, v)
             return
 
-        if tree2.root is EXT:
-            # Insert key into self
-            self.insert(key, val)
+        # 2) If self is empty, then the combined tree is just t with (k, v) inserted.
+        if not self.root.is_real_node():
+            t.insert(k, v)
+            # Make self point to t's data
+            self.root = t.root
+            self.size = t.size
+            self.max_node = t.max_node
             return
 
-        # Determine which tree is "taller"
-        h1 = self.root.height
-        h2 = tree2.root.height
+        # 3) Create a new "bridge" node for (k, v).
+        bridge = self._create_node(k, v)
 
-        # The new item’s node
-        new_node = self._create_node(key, val)
+        # 4) Attach the smaller tree on the left of the new node,
+        #    and the larger tree on the right of the new node.
+        #
+        #    We assume you have some way to check which tree has smaller keys.
+        #    For example, if t.max_node < self.root (or something similar).
+        #
+        #    Let's suppose that *t* has all keys SMALLER than self.
+        #    Then t goes on the LEFT, self goes on the RIGHT.
+        #
+        #    If it's the other way around (t has all keys LARGER), just swap them.
+        #
+        #    If your assignment states explicitly which side to attach,
+        #    adapt accordingly.
 
-        if h1 > h2:
-            # We attach tree2 as a subtree of self
-            # 1) Find the place in self to attach
-            # 2) Insert the new node between
-            # A typical approach: go to the largest node in self or climb down
-            # until we find a spot where the height difference is <= 1
-            curr = self.root
-            while curr is not EXT:
-                if curr.height == h2:  # potential spot
-                    break
-                if curr.right is not EXT and curr.right.height >= h2:
-                    curr = curr.right
-                else:
-                    break
-
-            # 'curr' is where we want to attach
-            # new_node's left is curr.right (could be EXT)
-            new_node.left = curr.right
-            if new_node.left:
-                new_node.left.parent = new_node
-            # new_node's right is tree2.root
-            new_node.right = tree2.root
-            new_node.right.parent = new_node
-
-            # attach new_node as curr.right
-            curr.right = new_node
-            new_node.parent = curr
-
-            # rebalance
-            self._rebalance_upwards(new_node)
-
+        # Example: all keys in t < all keys in self
+        if t.max_node.key < self.root.key:
+            bridge.left = t.root
+            t.root.parent = bridge
+            bridge.right = self.root
+            self.root.parent = bridge
         else:
-            # tree2 is taller or same
-            # symmetrical logic: attach self to tree2
-            curr = tree2.root
-            while curr is not EXT:
-                if curr.height == h1:
-                    break
-                if curr.left is not EXT and curr.left.height >= h1:
-                    curr = curr.left
-                else:
-                    break
+            bridge.right = t.root
+            t.root.parent = bridge
+            bridge.left = self.root
+            self.root.parent = bridge
 
-            new_node.right = curr.left
-            if new_node.right:
-                new_node.right.parent = new_node
-            new_node.left = self.root
-            new_node.left.parent = new_node
+        # 5) The new root of the combined tree is now 'bridge'.
+        self.root = bridge
 
-            curr.left = new_node
-            new_node.parent = curr
+        # 6) The new size is the sum of both trees, plus 1 for the new node.
+        self.size = t.size + self.size + 1
 
-            tree2._rebalance_upwards(new_node)
-            self.root = tree2.root
+
+        # 8) Rebalance from the new root (or from 'bridge') upward.
+        self._rebalance_upwards(bridge)
+
+
+
 
     def split(self, node):
         """
@@ -404,11 +397,6 @@ class AVLTree(object):
         self._inorder(node.right, result)
 
 
-    def get_root(self):
-        """
-        Returns the root of the tree.
-        """
-        return self.root
 
     ##########################
     #  ROTATIONS & REBALANCE #
