@@ -156,14 +156,12 @@ def test_suite():
 
     # Test 3 - test tree split
     for i in range(TEST_NUM):
-        T = generate_tree()
-        display(T)
-        split_key = random.choice(L)
+        L1 = random.sample(nums, TREE_SIZE)
+        T = generate_tree(L1)
+        split_key = random.choice(L1)
         v = T.search(split_key)[0]
-        display(T)
         t1, t2 = T.split(v)
-        display(t1)
-        display(t2)
+        print("aaa")
         assert check_bst(t1)
         assert check_bst(t2)
         assert check_height(t1.root)
