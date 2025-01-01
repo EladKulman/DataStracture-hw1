@@ -271,6 +271,50 @@ class AVLTree(object):
     ##########################
     #    JOIN AND SPLIT      #
     ##########################
+    # def join2(self, t, k, v):
+    #      # 1) If tree t is empty, we simply insert (k, v) into self and return.
+    #     if not t.root.is_real_node():
+    #         self.insert(k, v)
+    #         return
+        
+    #     # 2) If self is empty, then the combined tree is just t with (k, v) inserted.
+    #     if not self.root.is_real_node():
+    #         t.insert(k, v)
+    #         # Make self point to t's data
+    #         self.root = t.root
+    #         self.size = t.size
+    #         self._max_node = t._max_node
+    #         return
+        
+    #     #4 reverse the tree if t is bigger than self
+    #     if t._max_node.key > self.root.key:
+    #         return t.join(self, k, v)
+        
+    #     h1 = get_height(T1)
+    # h2 = get_height(T2)
+
+    # # If T1 is significantly taller:
+    # if h1 > h2 + 1:
+    #     # Join (T1.right, k, T2) into T1.right
+    #     T1.right = avl_join(T1.right, k, T2)
+    #     return rebalance(T1)
+
+    # # If T2 is significantly taller:
+    # elif h2 > h1 + 1:
+    #     # Join (T1, k, T2.left) into T2.left
+    #     T2.left = avl_join(T1, k, T2.left)
+    #     return rebalance(T2)
+
+    # else:
+    #     # Heights are close enough; make a new root
+    #     root = Node(k)
+    #     root.left = T1
+    #     root.right = T2
+    #     update_height(root)
+    #     # Because T1 and T2 differ at most by 1 in height, 
+    #     # we do not strictly need a rotation here, but let's be consistent:
+    #     return rebalance(root)
+
 
     def join(self, t, k, v):
         """
@@ -361,23 +405,27 @@ class AVLTree(object):
 
         # 2) T1, T2 start empty
         T1 = AVLTree()
+        node.left.parent = None
         T1.root = node.left
-        T1._max_node = node.left
+        T1._max_node = self._find_max_node(node.left)
         T2 = AVLTree()
+        node.right.parent = None
         T2.root = node.right
-        T2._max_node = node.right
+        T2._max_node = self._find_max_node(node.right)
 
         parent = node.parent
         while parent is not None:
             if parent.left == node:
                 # parent -> T2
                 new_tree = AVLTree()
+                parent.right.parent = None
                 new_tree.root = parent.right
                 new_tree._max_node = parent.right
                 T2.join(new_tree, parent.key, parent.value)
             else:
                 # parent -> T2
                 new_tree = AVLTree()
+                parent.left.parent = None
                 new_tree.root = parent.left
                 new_tree._max_node = parent.left
                 T1.join(new_tree, parent.key, parent.value)
@@ -405,6 +453,17 @@ class AVLTree(object):
         self._inorder(node.left, result)
         result.append((node.key, node.value))
         self._inorder(node.right, result)
+
+    def _find_max_node(self, node):
+        """
+        Returns the node with the maximum key in the subtree rooted at 'node'.
+        """
+        if not node.is_real_node():
+            return node
+        current = node
+        while current.right is not EXT:
+            current = current.right
+        return current
 
 
 
