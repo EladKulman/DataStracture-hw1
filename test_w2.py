@@ -104,6 +104,6 @@ def temp():
 
 
 if __name__ == "__main__":
-    test()
-    # temp()
+    # test()
+    temp()
     print("split test passed")
