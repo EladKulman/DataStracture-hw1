@@ -59,7 +59,7 @@ class AVLTree(object):
         """
         self.root = EXT
         self.size = 0
-        self.max_node = EXT
+        self._max_node = EXT
 
     def _create_node(self, key, value):
         node = AVLNode(key, value)
@@ -101,11 +101,11 @@ class AVLTree(object):
         Searches for 'key' in the AVL tree, but starts at the maximum node
         instead of the root. Returns (x, e) as in search().
         """
-        max_node = self.max_node
-        if max_node is EXT:
+        _max_node = self._max_node
+        if _max_node is EXT:
             return (EXT, 1)  # empty tree => path length = 1
 
-        current = max_node
+        current = _max_node
         edges = 1
         # We move up or down the tree to find the key
         while current is not EXT:
@@ -146,7 +146,7 @@ class AVLTree(object):
             new_node = self._create_node(key, val)
             self.root = new_node
             self.size += 1
-            self.max_node = new_node
+            self._max_node = new_node
             return (new_node, 1, 0)
 
         current = self.root
@@ -174,8 +174,8 @@ class AVLTree(object):
         # Step 2: Rebalance up the tree
         h = self._rebalance_upwards(new_node)
         self.size += 1
-        if self.max_node is EXT or key > self.max_node.key:
-            self.max_node = new_node
+        if self._max_node is EXT or key > self._max_node.key:
+            self._max_node = new_node
         return (new_node, e, h)
 
     def finger_insert(self, key, val):
@@ -183,14 +183,14 @@ class AVLTree(object):
         Inserts (key, val) into the AVL tree, starting from the maximum node (finger).
         Returns (x, e, h) same as insert.
         """
-        max_node = self.max_node
-        if max_node is EXT:
+        _max_node = self._max_node
+        if _max_node is EXT:
             # tree empty
             new_node = self._create_node(key, val)
             self.root = new_node
             return (new_node, 1, 0)
 
-        current = max_node
+        current = _max_node
         e = 1
         while True:
             e += 1
@@ -283,10 +283,10 @@ class AVLTree(object):
 
         Complexity: O(log n) due to the AVL rebalancing; the raw attach is O(1).
         """
-        # 7) Update max_node if needed.
-        if self.max_node.is_real_node() and t.max_node.is_real_node():
-            if t.max_node.key > self.max_node.key:
-                self.max_node = t.max_node
+        # 7) Update _max_node if needed.
+        if self._max_node.is_real_node() and t._max_node.is_real_node():
+            if t._max_node.key > self._max_node.key:
+                self._max_node = t._max_node
 
         # 1) If tree t is empty, we simply insert (k, v) into self and return.
         if not t.root.is_real_node():
@@ -299,7 +299,7 @@ class AVLTree(object):
             # Make self point to t's data
             self.root = t.root
             self.size = t.size
-            self.max_node = t.max_node
+            self._max_node = t._max_node
             return
 
         # 3) Create a new "bridge" node for (k, v).
@@ -309,7 +309,7 @@ class AVLTree(object):
         #    and the larger tree on the right of the new node.
         #
         #    We assume you have some way to check which tree has smaller keys.
-        #    For example, if t.max_node < self.root (or something similar).
+        #    For example, if t._max_node < self.root (or something similar).
         #
         #    Let's suppose that *t* has all keys SMALLER than self.
         #    Then t goes on the LEFT, self goes on the RIGHT.
@@ -320,7 +320,7 @@ class AVLTree(object):
         #    adapt accordingly.
 
         # Example: all keys in t < all keys in self
-        if t.max_node.key < self.root.key:
+        if t._max_node.key < self.root.key:
             bridge.left = t.root
             t.root.parent = bridge
             bridge.right = self.root
@@ -362,10 +362,10 @@ class AVLTree(object):
         # 2) T1, T2 start empty
         T1 = AVLTree()
         T1.root = node.left
-        T1.max_node = node.left
+        T1._max_node = node.left
         T2 = AVLTree()
         T2.root = node.right
-        T2.max_node = node.right
+        T2._max_node = node.right
 
         parent = node.parent
         while parent is not None:
@@ -373,13 +373,13 @@ class AVLTree(object):
                 # parent -> T2
                 new_tree = AVLTree()
                 new_tree.root = parent.right
-                new_tree.max_node = parent.right
+                new_tree._max_node = parent.right
                 T2.join(new_tree, parent.key, parent.value)
             else:
                 # parent -> T2
                 new_tree = AVLTree()
                 new_tree.root = parent.left
-                new_tree.max_node = parent.left
+                new_tree._max_node = parent.left
                 T1.join(new_tree, parent.key, parent.value)
             node = parent
             parent = parent.parent
@@ -518,3 +518,9 @@ class AVLTree(object):
         while current.left is not EXT:
             current = current.left
         return current
+
+    def max_node(self):
+        """
+        Returns the node with the maximum key in the tree.
+        """
+        return self._max_node

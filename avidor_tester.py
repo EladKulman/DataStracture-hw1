@@ -117,8 +117,8 @@ def test_suite():
         T = generate_tree()
         assert check_height(T.root)
         assert T.size == TREE_SIZE
-        assert T.max_node.key == max(L)
-        assert T.max_node.right == EXT
+        assert T.max_node().key == max(L)
+        assert T.max_node().right == EXT
         assert check_bst(T)
 
     # Test 2 - test tree join
@@ -141,16 +141,16 @@ def test_suite():
             T_small.join(T_big, key, val)
             assert check_height(T_small.root)
             assert T_small.size == L_small_tree_size + L_big_tree_size + 1
-            assert T_small.max_node.key == max(L_big)
-            assert T_small.max_node.right == EXT
+            assert T_small.max_node().key == max(L_big)
+            assert T_small.max_node().right == EXT
             assert check_bst(T_small)
             assert check_bst(T_small)
         else:
             T_big.join(T_small, key, val)
             assert check_height(T_big.root)
             assert T_big.size == L_small_tree_size + L_big_tree_size + 1
-            assert T_big.max_node.key == max(L_big)
-            assert T_big.max_node.right == EXT
+            assert T_big.max_node().key == max(L_big)
+            assert T_big.max_node().right == EXT
             assert check_bst(T_big)
             assert check_bst(T_big)
 
@@ -161,7 +161,6 @@ def test_suite():
         split_key = random.choice(L1)
         v = T.search(split_key)[0]
         t1, t2 = T.split(v)
-        print("aaa")
         assert check_bst(t1)
         assert check_bst(t2)
         assert check_height(t1.root)
