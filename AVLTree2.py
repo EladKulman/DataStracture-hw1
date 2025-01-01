@@ -2,6 +2,7 @@ class AVLNode(object):
     """
     A class representing a node in an AVL tree.
     """
+
     def __init__(self, key, value):
         """
         Real node constructor:
@@ -10,10 +11,11 @@ class AVLNode(object):
         """
         self.key = key
         self.value = value
-        self.left = None     # left child (AVLNode or None)
-        self.right = None    # right child (AVLNode or None)
-        self.parent = None   # parent (AVLNode or None)
+        self.left = None  # left child (AVLNode or None)
+        self.right = None  # right child (AVLNode or None)
+        self.parent = None  # parent (AVLNode or None)
         self.height = 0 if key is not None else -1
+
     def is_real_node(self):
         """
         Returns True if this node is a real node (holds a key).
@@ -45,7 +47,9 @@ class AVLNode(object):
             right_h = self.right.height if self.right else -1
             self.height = 1 + max(left_h, right_h)
 
+
 EXT = AVLNode("EXT", "EXT")
+
 
 class AVLTree(object):
     """
@@ -70,18 +74,17 @@ class AVLTree(object):
     #     SEARCH METHODS     #
     ##########################
 
-    def search(self, key):
+    def _search_from_node(self, start_node, key):
         """
-        Searches for 'key' in the AVL tree, starting at the root.
+        Core search logic that can start from any node.
         Returns (x, e), where:
           x = the node whose key == key, or EXT if not found
           e = number of edges on the path + 1
         """
-        if self.root is EXT:
-            return (EXT, 1)  # empty tree => path length = 1 by definition
+        if start_node is EXT:
+            return (EXT, 1)  # empty tree => path length = 1
 
-        # Standard BST search from root
-        current = self.root
+        current = start_node
         edges = 1  # as per instructions: "edges on path + 1"
         while current is not EXT:
             if key == current.key:
@@ -92,63 +95,53 @@ class AVLTree(object):
                 current = current.right
             edges += 1
 
-        # not found
         return (EXT, edges)
+
+    def search(self, key):
+        """
+        Searches for 'key' in the AVL tree, starting at the root.
+        Returns (x, e), where:
+          x = the node whose key == key, or EXT if not found
+          e = number of edges on the path + 1
+        """
+        return self._search_from_node(self.root, key)
 
     def finger_search(self, key):
         """
-        Searches for 'key' in the AVL tree, but starts at the maximum node
-        instead of the root. Returns (x, e) as in search().
+        Searches for 'key' in the AVL tree, starting from the maximum node.
+        Handles movement up the tree when the key is less than the maximum key.
+        Returns (x, e), where:
+          x = the node whose key == key, or EXT if not found
+          e = number of edges on the path + 1
         """
-        max_node = self.max_node
-        if max_node is EXT:
-            return (EXT, 1)  # empty tree => path length = 1
+        if self.max_node is EXT:
+            return (EXT, 1)
 
-        current = max_node
+        current = self.max_node
         edges = 1
-        # We move up or down the tree to find the key
-        while current is not EXT:
-            if key == current.key:
-                return (current, edges)
-            elif key < current.key:
-                # move left if possible, otherwise move to parent
-                if current.left is not EXT:
-                    current = current.left
-                else:
-                    # no left child => must go up
-                    current = current.parent
-            else:
-                # key > current.key
-                # move right if possible, otherwise move to parent
-                if current.right is not EXT:
-                    current = current.right
-                else:
-                    current = current.parent
+
+
+        while current is not EXT and key < current.key:
+            current = current.parent
             edges += 1
 
-        return (EXT, edges)
+        result_node, additional_edges = self._search_from_node(current, key)
+        return (result_node, edges + additional_edges - 1)
 
     ##########################
     #   INSERTION METHODS    #
     ##########################
-
-    def insert(self, key, val):
+    def search_helper(self, node, key, val):
         """
-        Inserts (key, val) into the AVL tree, starting from the root.
-        Returns (x, e, h):
-          x = newly inserted node
-          e = number of edges on the path BEFORE rebalancing
-          h = number of PROMOTE operations
-        """
-        # Step 1: Normal BST insertion from the root
-        if self.root is EXT:
-            new_node = self._create_node(key, val)
-            self.root = new_node
-            self.size += 1
-            self.max_node = new_node
-            return (new_node, 1, 0)
+                Inserts (key, val) into the AVL tree, starting from the root.
+                Returns (x, e, h):
+                  x = newly inserted node
+                  e = number of edges on the path BEFORE rebalancing
+                  h = number of PROMOTE operations
+                """
 
-        current = self.root
+        if node is None:
+            current = self.root
         e = 1  # edges on path + 1 as we traverse
         while True:
             e += 1
@@ -177,6 +170,24 @@ class AVLTree(object):
             self.max_node = new_node
         return (new_node, e, h)
 
+    def insert(self, key, val):
+        """
+        Inserts (key, val) into the AVL tree, starting from the root.
+        Returns (x, e, h):
+          x = newly inserted node
+          e = number of edges on the path BEFORE rebalancing
+          h = number of PROMOTE operations
+        """
+        # Step 1: Normal BST insertion from the root
+        if self.root is EXT:
+            new_node = self._create_node(key, val)
+            self.root = new_node
+            self.size += 1
+            self.max_node = new_node
+            return (new_node, 1, 0)
+
+        return self.search_helper(None, key, val)
+
     def finger_insert(self, key, val):
         """
         Inserts (key, val) into the AVL tree, starting from the maximum node (finger).
@@ -191,34 +202,15 @@ class AVLTree(object):
 
         current = max_node
         e = 1
-        while True:
+        while key < current.key and current.parent is not None:
             e += 1
-            if key < current.key:
-                if current.left is EXT:
-                    new_node = self._create_node(key, val)
-                    current.left = new_node
-                    new_node.parent = current
-                    break
-                else:
-                    current = current.left
-            else:
-                # key > current.key
-                if current.right is EXT:
-                    new_node = self._create_node(key, val)
-                    current.right = new_node
-                    new_node.parent = current
-                    break
-                else:
-                    current = current.right
+            current = current.parent
 
-        # Rebalance
-        h = self._rebalance_upwards(new_node)
-        return (new_node, e, h)
+        return self.search_helper(current, key, val)
 
     ##########################
     #     DELETION METHOD    #
     ##########################
-
     def delete(self, node):
         """
         Deletes 'node' from the AVL tree and rebalances as needed.
@@ -230,29 +222,32 @@ class AVLTree(object):
 
         # Case 1: node has 0 or 1 child
         if node.left is EXT or node.right is EXT:
-            self._delete_single_child(node)
+            parent = self._delete_single_child(node)
         else:
-            # node has 2 children: replace with successor
+            # Case 2: node has 2 children
             successor = self._get_min(node.right)
             # Swap the data
             node.key, successor.key = successor.key, node.key
             node.value, successor.value = successor.value, node.value
-            # Now delete the successor (which has at most 1 child)
-            self._delete_single_child(successor)
+            # Delete the successor (which has at most 1 child)
+            parent = self._delete_single_child(successor)
 
         self.size -= 1
+
+        # Rebalance up from the parent
+        if parent is not EXT:
+            self._rebalance_upwards(parent)
 
     def _delete_single_child(self, node):
         """
         Handles deletion when node has at most 1 child.
+        Returns the parent of the node for further rebalancing.
         """
         parent = node.parent
         child = node.left if node.left is not EXT else node.right
 
-        # If child is EXT, it means no children
-        # 'child' could be real or EXT
+        # If node is the root
         if parent is EXT:
-            # node is root
             self.root = child
             if child is not EXT:
                 child.parent = EXT
@@ -264,8 +259,17 @@ class AVLTree(object):
             if child is not EXT:
                 child.parent = parent
 
-        # Rebalance up from parent
-        self._rebalance_upwards(parent)
+        # Handle max_node adjustment
+        if self.max_node == node:
+            if node.left is not EXT:
+                self.max_node = node.left
+                while self.max_node.right is not EXT:
+                    self.max_node = self.max_node.right
+            else:
+                # Otherwise, fallback to the parent as the new max_node
+                self.max_node = parent
+
+        return parent
 
     ##########################
     #    JOIN AND SPLIT      #
@@ -403,7 +407,6 @@ class AVLTree(object):
         result.append((node.key, node.value))
         self._inorder(node.right, result)
 
-
     def get_root(self):
         """
         Returns the root of the tree.
@@ -426,7 +429,7 @@ class AVLTree(object):
             bf = current.get_balance_factor()
 
             # If we have a rotation scenario:
-            if bf == 2:   # Left is higher
+            if bf == 2:  # Left is higher
                 if current.left.get_balance_factor() < 0:
                     # LR rotation
                     self._rotate_left(current.left)

@@ -99,6 +99,7 @@ def test_suite():
      # Test 1 - test tree insert 
     for _ in range(TEST_NUM):
         T = generate_tree()
+        display(T)
         assert check_height(T.root)
         assert T.size == TREE_SIZE
         assert T.max_node.key == max(L)
