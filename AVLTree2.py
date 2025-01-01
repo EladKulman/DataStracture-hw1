@@ -2,6 +2,7 @@ class AVLNode(object):
     """
     A class representing a node in an AVL tree.
     """
+
     def __init__(self, key, value):
         """
         Real node constructor:
@@ -10,10 +11,11 @@ class AVLNode(object):
         """
         self.key = key
         self.value = value
-        self.left = None     # left child (AVLNode or None)
-        self.right = None    # right child (AVLNode or None)
-        self.parent = None   # parent (AVLNode or None)
+        self.left = None  # left child (AVLNode or None)
+        self.right = None  # right child (AVLNode or None)
+        self.parent = None  # parent (AVLNode or None)
         self.height = 0 if key is not None else -1
+
     def is_real_node(self):
         """
         Returns True if this node is a real node (holds a key).
@@ -45,8 +47,10 @@ class AVLNode(object):
             right_h = self.right.height if self.right else -1
             self.height = 1 + max(left_h, right_h)
 
+
 EXT = AVLNode(None, None)
 EXT.height = -1
+
 
 class AVLTree(object):
     """
@@ -71,63 +75,81 @@ class AVLTree(object):
     #     SEARCH METHODS     #
     ##########################
 
-    def search(self, key):
+    class AVLTree(object):
         """
-        Searches for 'key' in the AVL tree, starting at the root.
-        Returns (x, e), where:
-          x = the node whose key == key, or EXT if not found
-          e = number of edges on the path + 1
+        A class implementing an AVL tree.
         """
-        if self.root is EXT:
-            return (EXT, 1)  # empty tree => path length = 1 by definition
 
-        # Standard BST search from root
-        current = self.root
-        edges = 1  # as per instructions: "edges on path + 1"
-        while current is not EXT:
-            if key == current.key:
-                return (current, edges)
-            elif key < current.key:
-                current = current.left
-            else:
-                current = current.right
-            edges += 1
+        def __init__(self):
+            """
+            Constructor: Initialize an empty tree (root = EXT).
+            """
+            self.root = EXT
+            self.size = 0
+            self.max_node = EXT
 
-        # not found
-        return (EXT, edges)
+        def _create_node(self, key, value):
+            node = AVLNode(key, value)
+            node.left = EXT
+            node.right = EXT
+            return node
 
-    def finger_search(self, key):
-        """
-        Searches for 'key' in the AVL tree, but starts at the maximum node
-        instead of the root. Returns (x, e) as in search().
-        """
-        _max_node = self._max_node
-        if _max_node is EXT:
-            return (EXT, 1)  # empty tree => path length = 1
+        ##########################
+        #     SEARCH METHODS     #
+        ##########################
 
-        current = _max_node
-        edges = 1
-        # We move up or down the tree to find the key
-        while current is not EXT:
-            if key == current.key:
-                return (current, edges)
-            elif key < current.key:
-                # move left if possible, otherwise move to parent
-                if current.left is not EXT:
+        def _search_from_node(self, start_node, key):
+            """
+            Core search logic that can start from any node.
+            Returns (x, e), where:
+              x = the node whose key == key, or EXT if not found
+              e = number of edges on the path + 1
+            """
+            if start_node is EXT:
+                return (EXT, 1)  # empty tree => path length = 1
+
+            current = start_node
+            edges = 1  # as per instructions: "edges on path + 1"
+            while current is not EXT:
+                if key == current.key:
+                    return (current, edges)
+                elif key < current.key:
                     current = current.left
                 else:
-                    # no left child => must go up
-                    current = current.parent
-            else:
-                # key > current.key
-                # move right if possible, otherwise move to parent
-                if current.right is not EXT:
                     current = current.right
-                else:
-                    current = current.parent
-            edges += 1
+                edges += 1
 
-        return (EXT, edges)
+            return (EXT, edges)
+
+        def search(self, key):
+            """
+            Searches for 'key' in the AVL tree, starting at the root.
+            Returns (x, e), where:
+              x = the node whose key == key, or EXT if not found
+              e = number of edges on the path + 1
+            """
+            return self._search_from_node(self.root, key)
+
+        def finger_search(self, key):
+            """
+            Searches for 'key' in the AVL tree, starting from the maximum node.
+            Handles movement up the tree when the key is less than the maximum key.
+            Returns (x, e), where:
+              x = the node whose key == key, or EXT if not found
+              e = number of edges on the path + 1
+            """
+            if self.max_node is EXT:
+                return (EXT, 1)
+
+            current = self.max_node
+            edges = 1
+
+            while current is not EXT and key < current.key:
+                current = current.parent
+                edges += 1
+
+            result_node, additional_edges = self._search_from_node(current, key)
+            return (result_node, edges + additional_edges - 1)
 
     ##########################
     #   INSERTION METHODS    #
@@ -337,12 +359,8 @@ class AVLTree(object):
         # 6) The new size is the sum of both trees, plus 1 for the new node.
         self.size = t.size + self.size + 1
 
-
         # 8) Rebalance from the new root (or from 'bridge') upward.
         self._rebalance_upwards(bridge)
-
-
-
 
     def split(self, node):
         """
@@ -386,7 +404,6 @@ class AVLTree(object):
 
         return (T1, T2)
 
-
     ##########################
     #   HELPER / UTILITIES   #
     ##########################
@@ -406,8 +423,6 @@ class AVLTree(object):
         result.append((node.key, node.value))
         self._inorder(node.right, result)
 
-
-
     ##########################
     #  ROTATIONS & REBALANCE #
     ##########################
@@ -424,7 +439,7 @@ class AVLTree(object):
             bf = current.get_balance_factor()
 
             # If we have a rotation scenario:
-            if bf == 2:   # Left is higher
+            if bf == 2:  # Left is higher
                 if current.left.get_balance_factor() < 0:
                     # LR rotation
                     self._rotate_left(current.left)
